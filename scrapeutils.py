@@ -12,7 +12,7 @@ import zipfile
 USE_WEBCACHE = True
 WEBCACHE_PATH = 'webcache'
 
-def download(url, method='GET', data=None, url_extension='', zipped=False):
+def download(url, method='GET', data=None, url_extension='', zipped=False, cache=USE_WEBCACHE):
 	"""Downloads and returns content from the given URL.
 
 	If global variable USE_WEBCACHE is True, caches all received content
@@ -23,7 +23,7 @@ def download(url, method='GET', data=None, url_extension='', zipped=False):
 	
 	For .zip files use zipped=True and it returns zipfile.ZipFile object
 	"""
-	if USE_WEBCACHE:
+	if cache:
 		key = method.lower() + url + url_extension
 		hash = hashlib.md5(key.encode('utf-8')).hexdigest()
 		pathname = os.path.join(WEBCACHE_PATH, hash)
@@ -41,7 +41,7 @@ def download(url, method='GET', data=None, url_extension='', zipped=False):
 		r = requests.post(url, data)
 	r.raise_for_status()
 
-	if USE_WEBCACHE:
+	if cache:
 		if not os.path.exists(WEBCACHE_PATH):
 			os.makedirs(WEBCACHE_PATH)
 		if zipped:
