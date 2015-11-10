@@ -27,10 +27,13 @@ for tkey in terms:
     tcount = domtree.xpath('//div[@class="pg-count"]/strong')[0].text.strip()
     npages = math.ceil(int(tcount)/500)  #500 is max per page
     n = 0
+    print("n pages:" + str(npages))
 
     # for each page in pagination
     for page in range(0,npages):
         url = 'http://www.praha.eu/jnp/cz/o_meste/primator_a_volene_organy/zastupitelstvo/vysledky_hlasovani/index.html?size=500&periodId=' + str(terms[tkey]) + '&resolutionNumber=&printNumber=&s=1&meeting=&start=' + str(page*500)
+#        print(url)
+#        raise(Exception)
         domtree = html.fromstring(scrapeutils.download(url,cache=False))
         trs = domtree.xpath('//tbody/tr')
         
@@ -55,7 +58,7 @@ for tkey in terms:
             rowve.append(re.search('votingId=(\d{1,})',tds[4].xpath('a/@href')[0]).group(1).strip())
             
             urlve = 'http://www.praha.eu' + rowve[4]
-            domtreeve = html.fromstring(scrapeutils.download(urlve,cache=False))
+            domtreeve = html.fromstring(scrapeutils.download(urlve,cache=True))
             print(str(n) + ":" + str(tcount) + ":" + rowve[5])
             
             ps = domtreeve.xpath('//span[@class="fine-color"]/..')
