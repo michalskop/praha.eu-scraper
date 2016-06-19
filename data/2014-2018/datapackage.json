@@ -84,9 +84,13 @@
                 {
                     "name": "present",
                     "type": "integer"
+                },
+                {
+                    "name": "identifier",
+                    "type": "integer"
                 }
             ],
-            "primaryKey": "identifier"
+            "primaryKey": "id"
         }
     },
     {
