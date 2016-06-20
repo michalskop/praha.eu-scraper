@@ -1,11 +1,11 @@
-# scrape all votes from praha.eu and save them in temp datafiles
+# scrapes vote events from praha.eu and updates github datapackage
 
-import scrapeutils
-from lxml import html, etree
-import math
 import csv
-import datetime
-import re
+import datapackage  #v0.6.1
+import git
+
+import praha_eu_utils as utils
+import settings
 
 terms = {
   #'1998-2002': 18280,
@@ -15,76 +15,94 @@ terms = {
   '2014-2018': 29783,
 }
 
-for tkey in terms:
-    outfileve = open('tempdata/vote_events-' + tkey + '.csv', 'w')
-    outwriterve = csv.writer(outfileve, quoting=csv.QUOTE_NONNUMERIC)
-    outfilev = open('tempdata/votes-' + tkey + '.csv', 'w')
-    outwriterv = csv.writer(outfilev, quoting=csv.QUOTE_NONNUMERIC)
-    
-    # get number of pages
-    url0 = 'http://www.praha.eu/jnp/cz/o_meste/primator_a_volene_organy/zastupitelstvo/vysledky_hlasovani/index.html?size=5&periodId=' + str(terms[tkey]) + '&resolutionNumber=&printNumber=&s=1&meeting=&start=0'
-    domtree = html.fromstring(scrapeutils.download(url0,cache=False))
-    tcount = domtree.xpath('//div[@class="pg-count"]/strong')[0].text.strip()
-    npages = math.ceil(int(tcount)/500)  #500 is max per page
-    n = 0
-    print("n pages:" + str(npages))
+resources_attributes = {
+    "vote_events": ['id', 'start_date', 'motion:name', 'motion:number', 'motion:document', 'sources:link:url', 'legislative_session_id', 'result', 'counts:option:yes', 'counts:option:no', 'counts:option:abstain', 'number_of_people', 'present', 'identifier'],
+    "people": ['id', 'name', 'party', 'email'],
+    "votes": ['vote_event_id', 'voter_id', 'option']
+}
 
-    # for each page in pagination
-    for page in range(0,npages):
-        url = 'http://www.praha.eu/jnp/cz/o_meste/primator_a_volene_organy/zastupitelstvo/vysledky_hlasovani/index.html?size=500&periodId=' + str(terms[tkey]) + '&resolutionNumber=&printNumber=&s=1&meeting=&start=' + str(page*500)
-#        print(url)
-#        raise(Exception)
-        domtree = html.fromstring(scrapeutils.download(url,cache=False))
-        trs = domtree.xpath('//tbody/tr')
-        
-        # for each vote event
-        for tr in trs:
-            rowve = []
-            tds = tr.xpath('td')
-            try:
-                rowve.append(tds[0].text.strip())
-            except:
-                rowve.append('')
-            rowve.append(datetime.datetime.strptime(tds[1].text,"%d.%m.%Y").strftime("%Y-%m-%d"))
-            try:
-                rowve.append(tds[2].text.strip())
-            except:
-                rowve.append('')
-            try:
-                rowve.append(tds[3].text.strip())
-            except:
-                rowve.append('')    
-            rowve.append(tds[4].xpath('a/@href')[0].strip())
-            rowve.append(re.search('votingId=(\d{1,})',tds[4].xpath('a/@href')[0]).group(1).strip())
-            
-            urlve = 'http://www.praha.eu' + rowve[4]
-            domtreeve = html.fromstring(scrapeutils.download(urlve,cache=True))
-            print(str(n) + ":" + str(tcount) + ":" + rowve[5])
-            
-            ps = domtreeve.xpath('//span[@class="fine-color"]/..')
-            for p in ps:
-                chunks = etree.tostring(p).decode('utf-8').split('</span>')
-                j = 0
-                for chunk in chunks:
-                    if j > 0:
-                        rowve.append(re.search('^[^<&]*',chunk.strip()).group(0))
-                    j = j + 1
-            
-            outwriterve.writerow(rowve)
-            
-            trsve = domtreeve.xpath('//tbody/tr')
-            for trve in trsve:
-                rowv = []
-                tdsv = trve.xpath('td')
-                rowv.append(rowve[5])
-                rowv.append(tdsv[0].xpath('a')[0].text.strip())
-                rowv.append(re.search('memberId=(\d{1,})',tdsv[0].xpath('a/@href')[0]).group(1).strip())
-                rowv.append(tdsv[1].text.strip())
-                outwriterv.writerow(rowv)
-            
-            #raise(Exception)
-            n = n + 1
- 
-    outfileve.close()
-    outfilev.close()  
-    #raise(Exception)
+path = "data/" # from this script to datapackage.json
+
+# repo settings
+repo = git.Repo(settings.git_dir)
+git_ssh_identity_file = settings.ssh_file
+o = repo.remotes.origin
+git_ssh_cmd = 'ssh -i %s' % git_ssh_identity_file
+
+for term in terms:
+    ves_table = []
+    votes_table = []
+    people_table = []
+    ves_ids = []
+    people_ids = []
+    ves_dict = {}
+    people_dict = {}
+    # get datapackage from github
+    datapackage_url = "https://raw.githubusercontent.com/michalskop/praha.eu-scraper/master/data/" + term +"/datapackage.json"
+    dp = datapackage.DataPackage(datapackage_url)
+
+    # get all vote events
+    ves = utils.get_all_vote_events(terms[term])
+
+    # get all vote_event_ids from dp and from ves, get links to ves
+    dp_ves_ids = []
+    for resource in dp.resources:
+        if resource.metadata['name'] == 'vote_events':
+            for row in resource.data:
+                dp_ves_ids.append(int(row['id']))
+                ves_table.append(row)
+
+    for row in ves:
+        ves_ids.append(int(row['id']))
+        ves_dict[row['id']] = row
+
+    # prepare existing votes
+    for resource in dp.resources:
+        if resource.metadata['name'] == 'votes':
+            for row in resource.data:
+                votes_table.append(row)
+
+    # download vote event if not exists in dp
+    for ve_id in sorted(ves_ids):
+        if not ve_id in dp_ves_ids:
+            ve = utils.get_vote_event(ves_dict[str(ve_id)]['sources:link:url'], ve_id)
+            ves_dict[ve_id] = ves_dict[str(ve_id)].update(ve['vote_event'])
+            ves_table = ves_table + [ves_dict[str(ve_id)]]
+            votes_table = votes_table + ve['votes']
+
+    # update people
+    for resource in dp.resources:
+        if resource.metadata['name'] == 'people':
+            for row in resource.data:
+                people_dict[row['id']] = row
+                people_ids.append(int(row['id']))
+    current_people = utils.get_current_people()
+    for current_person in current_people:
+        try:
+            people_dict[current_person['id']]
+        except:
+            people_ids.append(int(current_person['id']))
+        people_dict[current_person['id']] = current_person
+    for person_id in sorted(people_ids):
+        people_table.append(people_dict[str(person_id)])
+
+    # save CSVs
+    tables = {
+        'people': people_table,
+        'votes': votes_table,
+        'vote_events': ves_table
+    }
+    for k in resources_attributes:
+        for resource in dp.resources:
+            if resource.metadata['name'] == k:
+                with open(path + term + '/' + resource.metadata['path'], "w") as fout:
+                    fieldnames = resources_attributes[k]
+                    csvdw = csv.DictWriter(fout,fieldnames)
+                    csvdw.writeheader()
+                    for row in tables[k]:
+                        csvdw.writerow(row)
+                a = repo.git.add(settings.git_dir + path + term + '/' + resource.metadata['path'])
+    with repo.git.custom_environment(GIT_COMMITTER_NAME=settings.bot_name, GIT_COMMITTER_EMAIL=settings.bot_email):
+        repo.git.commit(message="updating data %s" % term, author="%s <%s>" % (settings.bot_name, settings.bot_email))
+    with repo.git.custom_environment(GIT_SSH_COMMAND=git_ssh_cmd):
+            o.push()
