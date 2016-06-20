@@ -103,6 +103,6 @@ for term in terms:
                         csvdw.writerow(row)
                 a = repo.git.add(settings.git_dir + path + term + '/' + resource.metadata['path'])
     with repo.git.custom_environment(GIT_COMMITTER_NAME=settings.bot_name, GIT_COMMITTER_EMAIL=settings.bot_email):
-        repo.git.commit(message="updating data %s" % term, author="%s <%s>" % (settings.bot_name, settings.bot_email))
+        repo.git.commit(message="happily updating data %s" % term, author="%s <%s>" % (settings.bot_name, settings.bot_email))
     with repo.git.custom_environment(GIT_SSH_COMMAND=git_ssh_cmd):
             o.push()
