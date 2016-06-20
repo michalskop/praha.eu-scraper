@@ -3,6 +3,6 @@ dev/*
 webcache
 __pycache__
 tempdata
-*~lock
+*~lock*
 .Rhistory
-
+settings.py
