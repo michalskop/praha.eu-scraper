@@ -37,6 +37,11 @@ for term in terms:
     people_ids = []
     ves_dict = {}
     people_dict = {}
+    numbers = {
+        "vote_events": 0,
+        "people": 0,
+        "votes": 0
+    }
     # get datapackage from github
     datapackage_url = "https://raw.githubusercontent.com/michalskop/praha.eu-scraper/master/data/" + term +"/datapackage.json"
     dp = datapackage.DataPackage(datapackage_url)
@@ -68,7 +73,9 @@ for term in terms:
             ve = utils.get_vote_event(ves_dict[str(ve_id)]['sources:link:url'], ve_id)
             ves_dict[ve_id] = ves_dict[str(ve_id)].update(ve['vote_event'])
             ves_table = ves_table + [ves_dict[str(ve_id)]]
+            numbers['vote_events'] += 1
             votes_table = votes_table + ve['votes']
+            numbers['votes'] += len(ve['votes'])
 
     # update people
     for resource in dp.resources:
@@ -82,6 +89,7 @@ for term in terms:
             people_dict[current_person['id']]
         except:
             people_ids.append(int(current_person['id']))
+            numbers['people'] += 1
         people_dict[current_person['id']] = current_person
     for person_id in sorted(people_ids):
         people_table.append(people_dict[str(person_id)])
@@ -92,6 +100,11 @@ for term in terms:
         'votes': votes_table,
         'vote_events': ves_table
     }
+    # bots text for commit
+    happy_text = ''
+    for k in numbers:
+        # if numbers[k] > 0:
+            happy_text += ", " + str(numbers[k]) + " " + k
     for k in resources_attributes:
         for resource in dp.resources:
             if resource.metadata['name'] == k:
@@ -103,6 +116,7 @@ for term in terms:
                         csvdw.writerow(row)
                 a = repo.git.add(settings.git_dir + path + term + '/' + resource.metadata['path'])
     with repo.git.custom_environment(GIT_COMMITTER_NAME=settings.bot_name, GIT_COMMITTER_EMAIL=settings.bot_email):
-        repo.git.commit(message="happily updating data %s" % term, author="%s <%s>" % (settings.bot_name, settings.bot_email))
+        repo.git.commit(message="happily updating data %s%s" % (term, happy_text), author="%s <%s>" % (settings.bot_name, settings.bot_email))
     with repo.git.custom_environment(GIT_SSH_COMMAND=git_ssh_cmd):
             o.push()
+    message="happily updating data %s%s" % (term, happy_text)
