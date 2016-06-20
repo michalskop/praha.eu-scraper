@@ -95,7 +95,7 @@ for term in terms:
     for k in resources_attributes:
         for resource in dp.resources:
             if resource.metadata['name'] == k:
-                with open(path + term + '/' + resource.metadata['path'], "w") as fout:
+                with open(settings.git_dir + path + term + '/' + resource.metadata['path'], "w") as fout:
                     fieldnames = resources_attributes[k]
                     csvdw = csv.DictWriter(fout,fieldnames)
                     csvdw.writeheader()
