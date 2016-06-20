@@ -18,6 +18,10 @@
                 {
                     "name": "party",
                     "type": "string"
+                },
+                {
+                    "name": "email",
+                    "type": "string"
                 }
             ],
             "primaryKey": "name"
