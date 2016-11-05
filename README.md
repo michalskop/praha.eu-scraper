@@ -18,4 +18,7 @@ Copy example settings into settings and correct it for your Github account (e.g.
 
 Note: The origin for the local git project must be 'ssh' address (not 'https' one).
 
-You can automate the data retrieval using cron.
+## Automation
+You can automate the data retrieval using cron. Example:
+
+    14 3 * * * /usr/bin/python3 /home/project/praha.eu-scraper/scraper.py > /dev/null 2>&1
