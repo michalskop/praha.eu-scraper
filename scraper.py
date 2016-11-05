@@ -96,7 +96,7 @@ for term in terms:
 
     # save CSVs
     tables = {
-        'people': people_table,
+        'voters': people_table,
         'votes': votes_table,
         'vote_events': ves_table
     }
