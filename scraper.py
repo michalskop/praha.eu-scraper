@@ -17,7 +17,7 @@ terms = {
 
 resources_attributes = {
     "vote_events": ['id', 'start_date', 'motion:name', 'motion:number', 'motion:document', 'sources:link:url', 'legislative_session_id', 'result', 'counts:option:yes', 'counts:option:no', 'counts:option:abstain', 'number_of_people', 'present', 'identifier'],
-    "people": ['id', 'name', 'party', 'email'],
+    "voters": ['id', 'name', 'party', 'email'],
     "votes": ['vote_event_id', 'voter_id', 'option']
 }
 
@@ -32,14 +32,14 @@ git_ssh_cmd = 'ssh -i %s' % git_ssh_identity_file
 for term in terms:
     ves_table = []
     votes_table = []
-    people_table = []
+    voters_table = []
     ves_ids = []
-    people_ids = []
+    voters_ids = []
     ves_dict = {}
-    people_dict = {}
+    voters_dict = {}
     numbers = {
         "vote_events": 0,
-        "people": 0,
+        "voters": 0,
         "votes": 0
     }
     # get datapackage from github
@@ -77,26 +77,26 @@ for term in terms:
             votes_table = votes_table + ve['votes']
             numbers['votes'] += len(ve['votes'])
 
-    # update people
+    # update voters
     for resource in dp.resources:
-        if resource.metadata['name'] == 'people':
+        if resource.metadata['name'] == 'voters':
             for row in resource.data:
-                people_dict[row['id']] = row
-                people_ids.append(int(row['id']))
-    current_people = utils.get_current_people()
-    for current_person in current_people:
+                voters_dict[row['id']] = row
+                voters_ids.append(int(row['id']))
+    current_voters = utils.get_current_voters()
+    for current_person in current_voters:
         try:
-            people_dict[current_person['id']]
+            voters_dict[current_person['id']]
         except:
-            people_ids.append(int(current_person['id']))
-            numbers['people'] += 1
-        people_dict[current_person['id']] = current_person
-    for person_id in sorted(people_ids):
-        people_table.append(people_dict[str(person_id)])
+            voters_ids.append(int(current_person['id']))
+            numbers['voters'] += 1
+        voters_dict[current_person['id']] = current_person
+    for person_id in sorted(voters_ids):
+        voters_table.append(voters_dict[str(person_id)])
 
     # save CSVs
     tables = {
-        'voters': people_table,
+        'voters': voters_table,
         'votes': votes_table,
         'vote_events': ves_table
     }

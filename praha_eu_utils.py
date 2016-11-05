@@ -10,7 +10,7 @@ import re
 import requests
 # from urllib.parse import urlparse
 
-def get_current_people():
+def get_current_voters():
     url = "http://www.praha.eu/jnp/cz/o_meste/primator_a_volene_organy/zastupitelstvo/seznam_zastupitelu/index.html?size=100"
     r = requests.get(url)
     if r.status_code == 200:
@@ -18,7 +18,7 @@ def get_current_people():
         trs = domtree.xpath('//tbody/tr')
 
         # for each person
-        people = []
+        voters = []
         for tr in trs:
             person = {}
             tds = tr.xpath('td')
@@ -29,8 +29,8 @@ def get_current_people():
             except:
                 person['party'] = ''
             person['email'] = tds[2].xpath('a')[0].text.strip()
-            people.append(person)
-        return people
+            voters.append(person)
+        return voters
     else:
         raise(Exception)
 
@@ -75,7 +75,7 @@ def get_vote_event(url,ve_id):
                 j = j + 1
 
         votes = []
-        people = []
+        voters = []
         trs = domtree.xpath('//tbody/tr')
         for tr in trs:
             vote = {}
@@ -86,9 +86,9 @@ def get_vote_event(url,ve_id):
             vote['voter_id'] = person['id']
             vote['option'] = option2option(tds[1].text.strip())
             vote['vote_event_id'] = str(ve_id)
-            people.append(person)
+            voters.append(person)
             votes.append(vote)
-        return {'vote_event': ve, 'votes': votes, 'people': people}
+        return {'vote_event': ve, 'votes': votes, 'voters': voters}
     else:
         raise(Exception)
 
