@@ -1,7 +1,7 @@
 # scrapes vote events from praha.eu and updates github datapackage
 
 import csv
-import datapackage  #v0.6.1
+import datapackage  #v0.8.3
 import git
 
 import praha_eu_utils as utils
@@ -52,7 +52,7 @@ for term in terms:
     # get all vote_event_ids from dp and from ves, get links to ves
     dp_ves_ids = []
     for resource in dp.resources:
-        if resource.metadata['name'] == 'vote_events':
+        if resource.descriptor['name'] == 'vote_events':
             for row in resource.data:
                 dp_ves_ids.append(int(row['id']))
                 ves_table.append(row)
@@ -63,7 +63,7 @@ for term in terms:
 
     # prepare existing votes
     for resource in dp.resources:
-        if resource.metadata['name'] == 'votes':
+        if resource.descriptor['name'] == 'votes':
             for row in resource.data:
                 votes_table.append(row)
 
@@ -79,7 +79,7 @@ for term in terms:
 
     # update voters
     for resource in dp.resources:
-        if resource.metadata['name'] == 'voters':
+        if resource.descriptor['name'] == 'voters':
             for row in resource.data:
                 voters_dict[row['id']] = row
                 voters_ids.append(int(row['id']))
@@ -107,14 +107,14 @@ for term in terms:
             happy_text += ", " + str(numbers[k]) + " " + k
     for k in resources_attributes:
         for resource in dp.resources:
-            if resource.metadata['name'] == k:
-                with open(settings.git_dir + path + term + '/' + resource.metadata['path'], "w") as fout:
+            if resource.descriptor['name'] == k:
+                with open(settings.git_dir + path + term + '/' + resource.descriptor['path'], "w") as fout:
                     fieldnames = resources_attributes[k]
                     csvdw = csv.DictWriter(fout,fieldnames)
                     csvdw.writeheader()
                     for row in tables[k]:
                         csvdw.writerow(row)
-                a = repo.git.add(settings.git_dir + path + term + '/' + resource.metadata['path'])
+                a = repo.git.add(settings.git_dir + path + term + '/' + resource.descriptor['path'])
     with repo.git.custom_environment(GIT_COMMITTER_NAME=settings.bot_name, GIT_COMMITTER_EMAIL=settings.bot_email):
         repo.git.commit(message="happily updating data %s%s" % (term, happy_text), author="%s <%s>" % (settings.bot_name, settings.bot_email))
     with repo.git.custom_environment(GIT_SSH_COMMAND=git_ssh_cmd):
