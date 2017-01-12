@@ -118,5 +118,5 @@ for term in terms:
     with repo.git.custom_environment(GIT_COMMITTER_NAME=settings.bot_name, GIT_COMMITTER_EMAIL=settings.bot_email):
         repo.git.commit(message="happily updating data %s%s" % (term, happy_text), author="%s <%s>" % (settings.bot_name, settings.bot_email))
     with repo.git.custom_environment(GIT_SSH_COMMAND=git_ssh_cmd):
-            o.push()
-    message="happily updating data %s%s" % (term, happy_text)
+        o.push()
+    # message="happily updating data %s%s" % (term, happy_text)
