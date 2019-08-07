@@ -50,15 +50,11 @@
                     "type": "string"
                 },
                 {
+                    "name": "motion:document",
+                    "type": "string"
+                },
+                {
                     "name": "sources:link:url",
-                    "type": "string"
-                },
-                {
-                    "name": "motion:document",
-                    "type": "string"
-                },
-                {
-                    "name": "motion:document",
                     "type": "string"
                 },
                 {
