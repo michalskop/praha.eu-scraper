@@ -81,14 +81,14 @@ for term in terms:
     current_voters = utils.get_current_voters()
     for current_person in current_voters:
         try:
-            voters_dict[current_person['id']]
+            voters_dict[int(current_person['id'])]
         except Exception:
             voters_ids.append(int(current_person['id']))
             numbers['voters'] += 1
-        voters_dict[current_person['id']] = current_person
+        voters_dict[int(current_person['id'])] = current_person
     for person_id in sorted(voters_ids):
         try:
-            voters_table.append(voters_dict[str(person_id)])
+            voters_table.append(voters_dict[person_id])
         except Exception:
             try:
                 voters_table.append(voters_dict[person_id])
